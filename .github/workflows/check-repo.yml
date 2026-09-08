@@ -1,0 +1,29 @@
+name: Check Repository
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check project structure
+        run: |
+          test -f README.md
+          test -f CONTRIBUTING.md
+          test -f LICENSE
+          test -d week1
+          test -d week2
+          test -d week3
+          test -d week4
+          test -d week5
+          echo "Repository structure looks good!"
