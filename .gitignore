@@ -1,0 +1,18 @@
+# Workspace files
+*.workspace
+*.user.workspace
+
+# Desktop / OS files
+*DESKTOP*
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
