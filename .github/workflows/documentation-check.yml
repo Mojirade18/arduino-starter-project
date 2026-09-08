@@ -1,0 +1,69 @@
+name: Documentation Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-documentation:
+    name: Check project documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+
+      - name: Check README for changed projects
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          echo "Checking project documentation..."
+
+          checked_projects=""
+
+          for file in $ALL_CHANGED_FILES; do
+
+            # Only check files inside week folders
+            if [[ "$file" != week1/* &&
+                  "$file" != week2/* &&
+                  "$file" != week3/* &&
+                  "$file" != week4/* &&
+                  "$file" != week5/* ]]; then
+              continue
+            fi
+
+            # Get the week folder
+            week=$(echo "$file" | cut -d'/' -f1)
+
+            # Get the project folder
+            project=$(echo "$file" | cut -d'/' -f1-2)
+
+            # Skip if the file is directly inside the week folder
+            if [[ "$file" != */*/* ]]; then
+              continue
+            fi
+
+            # Avoid checking the same project repeatedly
+            if [[ "$checked_projects" == *"|$project|"* ]]; then
+              continue
+            fi
+
+            checked_projects="$checked_projects|$project|"
+
+            echo "Checking documentation for: $project"
+
+            if [[ ! -f "$project/README.md" ]]; then
+              echo "❌ Missing README.md in $project"
+              exit 1
+            fi
+
+            echo "✅ README found in $project"
+          done
+
+          echo "✅ Documentation check passed!"
