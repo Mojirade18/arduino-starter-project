@@ -2,13 +2,35 @@
 
 > **Learn → Build → Experiment → Contribute**
 
-A beginner-friendly open-source collection of **Arduino and embedded systems projects** designed to help beginners learn electronics, programming, sensors, and GitHub through hands-on projects.
+Arduino Starter Lab is a beginner-friendly open-source repository for learning **Arduino, electronics, embedded systems, and GitHub** through hands-on projects.
 
-Whether you're building your first Arduino circuit or making your first open-source contribution, you're welcome here.
+The goal is simple: **learn something, build it, experiment with it, and eventually help someone else build it too.**
 
 ---
 
-## 📚 Learning Path
+## 📚 LEARN
+
+Start by learning the fundamentals of Arduino and electronics.
+
+You'll gradually explore:
+
+* Arduino programming
+* Electronic components
+* Sensors and actuators
+* Digital and analog signals
+* Embedded systems concepts
+* Git and GitHub
+* Open-source collaboration
+
+Learning resources and component guides will be added as the project grows.
+
+---
+
+## 🔧 BUILD
+
+Put what you learn into practice through small, progressively challenging projects.
+
+### Current Learning Path
 
 | Week     | Project                     | Main Concepts                         |
 | -------- | --------------------------- | ------------------------------------- |
@@ -18,88 +40,115 @@ Whether you're building your first Arduino circuit or making your first open-sou
 | 👏 **4** | Sound-Activated LED         | Sound sensors, timing                 |
 | 📏 **5** | Ultrasonic Proximity Alarm  | Distance measurement, HC-SR04         |
 
-### Project Previews
+Each project will eventually include:
 
-| Week   | Preview                                                             |
-| ------ | ------------------------------------------------------------------- |
-| Week 1 | ![Light-Activated LED](week1/smart_light.BMP)                       |
-| Week 2 | ![7-Bit Random Number Display](week2/photo_2026-02-20_20-10-31.jpg) |
-| Week 3 | ![Water Leak Detector](week3/photo_2026-03-17_22-25-05.jpg)         |
-| Week 4 | ![Sound-Activated LED](week4/photo_2026-03-29_21-16-15.jpg)         |
-| Week 5 | 📸 Coming soon                                                      |
-
----
-
-## 🚀 Getting Started
-
-### Requirements
-
-* Arduino board
-* Arduino IDE
-* Basic electronic components
-* Breadboard and jumper wires
-* Proteus (optional, for simulation)
-
-### Start Learning
-
-Begin with **Week 1** and work through the projects in order.
-
-For each project:
-
-1. Read the project documentation.
-2. Gather the required components.
-3. Build the circuit.
-4. Upload the Arduino code.
-5. Test the project.
-6. Experiment with the code.
-7. Try the beginner challenge.
+* Components required
+* Circuit/wiring information
+* Source code
+* How it works
+* Project images
+* What you'll learn
+* A challenge to modify or improve the project
 
 ---
 
-## 🤝 Contributing
+## 🧪 EXPERIMENT
+
+Don't just copy the projects.
+
+After building each one, try changing something.
+
+For example:
+
+> 💡 **Challenge:** Modify the Light-Activated LED so that the LED automatically turns off after a specific period.
+
+Beginner challenges will be added to help you practice what you've learned.
+
+---
+
+## 🤝 CONTRIBUTE
 
 You don't need to be an expert to contribute.
 
-You can help by:
+You can contribute by:
 
-* 🐛 Reporting bugs
 * 📖 Improving documentation
+* 🐛 Fixing bugs
+* 🔌 Testing circuits
+* 🖼️ Adding project images
 * 💡 Suggesting project ideas
-* 🔧 Testing circuits
+* 🧩 Creating beginner challenges
 * 💻 Improving code
-* 🌱 Creating beginner challenges
 * 🚀 Adding new projects
 
-Check **[CONTRIBUTING.md](CONTRIBUTING.md)** to learn how to contribute.
+The repository is designed to help contributors progress from:
+
+**GitHub Beginner → Arduino Beginner → Embedded Systems Beginner → Project Contributor**
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for contribution guidelines.
 
 ---
 
 ## 🗺️ Roadmap
 
-* [x] Create beginner Arduino projects
-* [x] Build a 5-week learning path
-* [ ] Add detailed project documentation
-* [ ] Add circuit diagrams
+### Foundation
+
+* [x] Create Arduino learning projects
+* [x] Build the first 5-week learning path
+* [x] Add MIT License
+
+### Learning
+
+* [ ] Add component guides
+* [ ] Add embedded systems documentation
 * [ ] Add beginner challenges
+* [ ] Add detailed project documentation
+
+### Open Source
+
 * [ ] Add contribution guidelines
+* [ ] Add Code of Conduct
 * [ ] Add issue templates
+* [ ] Add pull request template
 * [ ] Add GitHub Actions
-* [ ] Create beginner-friendly issues
-* [ ] Expand into ESP32 and more advanced embedded systems
+* [ ] Add beginner-friendly issues
+* [ ] Add GitHub Discussions
+
+### Future
+
+* [ ] ESP32 projects
+* [ ] IoT projects
+* [ ] Embedded C/C++
+* [ ] Robotics projects
+* [ ] Community-built projects
 
 ---
 
-## ⭐ Support
+## 🌱 Who Is This For?
 
-If this project helps you learn:
+This project is for anyone who wants to:
 
-**⭐ Star the repository**
+* Start learning Arduino
+* Understand electronics through practice
+* Explore embedded systems
+* Learn GitHub and open source
+* Make their first contribution
+* Build projects instead of only following tutorials
 
-**🐛 Report an issue**
+**You don't have to know everything before you start.**
 
-**💡 Suggest an improvement**
+Start small. Build something. Break it. Fix it. Learn from it. Then help someone else do the same.
 
-**🤝 Contribute**
+---
+
+## ⭐ Support the Lab
+
+If you're learning from this project, consider:
+
+⭐ Starring the repository
+🐛 Reporting an issue
+💡 Suggesting an improvement
+🤝 Contributing to the project
 
 ---
 
