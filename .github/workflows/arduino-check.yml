@@ -1,0 +1,38 @@
+name: Arduino Code Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-arduino-files:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Arduino files
+        run: |
+          files=$(find . -name "*.ino")
+
+          if [ -z "$files" ]; then
+            echo "No Arduino files found."
+            exit 1
+          fi
+
+          for file in $files
+          do
+            if [ ! -s "$file" ]; then
+              echo "ERROR: $file is empty."
+              exit 1
+            fi
+
+            echo "Checked: $file"
+          done
+
+          echo "All Arduino files look good!"
