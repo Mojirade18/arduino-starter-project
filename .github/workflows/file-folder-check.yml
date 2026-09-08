@@ -1,0 +1,59 @@
+name: File and Folder Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-structure:
+    name: Check repository structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+
+      - name: Check file locations
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          echo "Checking Arduino project structure..."
+
+          for file in $ALL_CHANGED_FILES; do
+            echo "Checking: $file"
+
+            # Ignore GitHub workflow files
+            if [[ "$file" == .github/* ]]; then
+              continue
+            fi
+
+            # Allow root-level repository files
+            if [[ "$file" == "README.md" ||
+                  "$file" == "LICENSE" ||
+                  "$file" == ".gitignore" ||
+                  "$file" == "CONTRIBUTING.md" ]]; then
+              continue
+            fi
+
+            # Every other file must be inside week1-week5
+            if [[ "$file" != week1/* &&
+                  "$file" != week2/* &&
+                  "$file" != week3/* &&
+                  "$file" != week4/* &&
+                  "$file" != week5/* ]]; then
+
+              echo "❌ Invalid file location: $file"
+              echo "Files must be inside week1/, week2/, week3/, week4/, or week5/."
+              exit 1
+            fi
+
+            echo "✅ Valid location: $file"
+          done
+
+          echo "✅ File and folder structure check passed!"
