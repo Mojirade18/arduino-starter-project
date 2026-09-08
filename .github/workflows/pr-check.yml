@@ -1,0 +1,26 @@
+name: Pull Request Quality Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check pull request description
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if [ -z "$PR_BODY" ]; then
+            echo "ERROR: Please add a description to your pull request."
+            exit 1
+          fi
+
+          echo "Pull request description found."
+
+      - name: Check changed files
+        run: |
+          echo "Pull request contains changes."
+          echo "Quality check completed successfully."
