@@ -17,3 +17,4 @@ Thumbs.db
 *.tmp
 *.temp
 ollama.log
+__pycache__/

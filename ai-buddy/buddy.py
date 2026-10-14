@@ -2,12 +2,13 @@
 import sys
 from pathlib import Path
 
-from ai import ask_ai
+from ai import ask_ai, chat_ai
 from compiler import compile_code, only_error_lines
 from changes import extract_code, get_changes, describe
 from rules import rule_for
 
-MAX_TRIES = 3
+MAX_TRIES = 3     # how many times Buddy tries to find a fix that compiles
+MAX_MEMORY = 10   # how many recent messages Buddy remembers in chat mode
 
 # Extra rules used only for normal questions
 QUESTION_STYLE = """Answer rules:
@@ -15,6 +16,8 @@ QUESTION_STYLE = """Answer rules:
 - Include a short Arduino code example.
 - End with one tip that helps a beginner avoid a common mistake."""
 
+
+# ---------- Helpers ----------
 
 def build_text(changes, part, ai_question):
     """Use rules where possible (part 0 = hint, 1 = explanation), and the AI for the rest."""
@@ -76,6 +79,14 @@ def show_answer(fixed, changes):
     print("\n   ✔ = from Buddy's rules (always matches the fix) · 🤖 = from the AI")
 
 
+def next_step():
+    """Wait for the user. Returns True if they want to jump to the answer."""
+    choice = input("\n   [Enter] next hint · type 'answer' to see the fix · [Ctrl+C] go try it yourself: ")
+    return choice.strip().lower() == "answer"
+
+
+# ---------- Commands ----------
+
 def debug(path):
     code = Path(path).read_text()
 
@@ -96,12 +107,6 @@ def debug(path):
         return
 
     show_answer(fixed, get_changes(code, fixed))
-
-
-def next_step():
-    """Wait for the user. Returns True if they want to jump to the answer."""
-    choice = input("\n   [Enter] next hint · type 'answer' to see the fix · [Ctrl+C] go try it yourself: ")
-    return choice.strip().lower() == "answer"
 
 
 def hint(path):
@@ -157,6 +162,34 @@ def hint(path):
     show_answer(fixed, changes)
 
 
+def chat():
+    print("🤖 Hi! I'm Arduino Buddy. Ask me anything about Arduino.")
+    print("   Type 'new' to start a fresh conversation, or 'quit' to leave.\n")
+    history = []
+    while True:
+        try:
+            question = input("You: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n👋 Bye! Happy building.")
+            return
+        if not question:
+            continue
+        if question.lower() in ("quit", "exit", "bye"):
+            print("👋 Bye! Happy building.")
+            return
+        if question.lower() == "new":
+            history = []
+            print("🧹 Okay, fresh start!\n")
+            continue
+
+        history.append({"role": "user", "content": question})
+        history = history[-MAX_MEMORY:]   # forget the oldest messages
+        print("Buddy: ", end="", flush=True)
+        reply = chat_ai(history)
+        history.append({"role": "assistant", "content": reply})
+        print()
+
+
 # ----- Choose what to do based on the first word typed -----
 if __name__ == "__main__":
     if len(sys.argv) >= 3 and sys.argv[1] == "explain":
@@ -167,5 +200,7 @@ if __name__ == "__main__":
         debug(sys.argv[2])
     elif len(sys.argv) >= 3 and sys.argv[1] == "hint":
         hint(sys.argv[2])
+    elif len(sys.argv) >= 2 and sys.argv[1] == "chat":
+        chat()
     else:
         print(ask_ai(" ".join(sys.argv[1:]) + "\n\n" + QUESTION_STYLE))
