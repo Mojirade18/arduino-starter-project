@@ -41,6 +41,9 @@ Follow the learning path and build projects as you learn.
 Each project includes code, components, circuit information, and an opportunity to experiment.
 
 ## 🧪 Experiment
+## 🤖 Stuck? Ask Arduino Buddy
+
+[Arduino Buddy](ai-buddy/) is a free, offline AI teacher for this lab. It explains sketches, gives hints, and only shows fixes that actually compile.
 
 Don't just copy the projects.
 
