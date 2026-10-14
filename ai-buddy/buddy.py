@@ -2,6 +2,7 @@ import sys
 import re
 import subprocess
 import tempfile
+import difflib
 from pathlib import Path
 import ollama
 
@@ -54,6 +55,40 @@ def extract_code(reply):
     return max(blocks, key=len) if blocks else None
 
 
+def strip_comment(line):
+    """Remove // comments and extra spaces, so we only compare real code."""
+    return line.split("//")[0].strip()
+
+
+def show_changes(original, fixed):
+    """Compare the original and fixed sketches and print what changed."""
+    old = [(n, strip_comment(l)) for n, l in enumerate(original.splitlines(), 1) if strip_comment(l)]
+    new = [strip_comment(l) for l in fixed.splitlines() if strip_comment(l)]
+    old_text = [text for _, text in old]
+
+    print("\n📝 What Buddy changed (found by comparing the files, not by the AI):")
+    matcher = difflib.SequenceMatcher(None, old_text, new)
+    changed = False
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        changed = True
+        if tag == "replace":
+            for k in range(max(i2 - i1, j2 - j1)):
+                line_no = old[min(i1 + k, i2 - 1)][0]
+                before = old_text[i1 + k] if i1 + k < i2 else "(nothing)"
+                after = new[j1 + k] if j1 + k < j2 else "(removed)"
+                print(f"  Line {line_no}:  {before}   →   {after}")
+        elif tag == "delete":
+            for k in range(i1, i2):
+                print(f"  Line {old[k][0]}:  removed   {old_text[k]}")
+        elif tag == "insert":
+            for k in range(j1, j2):
+                print(f"  Added:  {new[k]}")
+    if not changed:
+        print("  Only comments or spacing changed.")
+
+
 def debug(path):
     code = Path(path).read_text()
 
@@ -88,6 +123,7 @@ def debug(path):
         ok, new_errors = compile_code(fixed)
         if ok:
             print("\n" + reply)
+            show_changes(code, fixed)
             print("\n✅ Verified: Buddy compiled this fix, and it works.")
             return
 
