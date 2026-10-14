@@ -6,6 +6,7 @@ from ai import ask_ai, chat_ai
 from compiler import compile_code, only_error_lines
 from changes import extract_code, get_changes, describe
 from rules import rule_for
+from lab import find_page
 
 MAX_TRIES = 3     # how many times Buddy tries to find a fix that compiles
 MAX_MEMORY = 10   # how many recent messages Buddy remembers in chat mode
@@ -163,9 +164,10 @@ def hint(path):
 
 
 def chat():
-    print("🤖 Hi! I'm Arduino Buddy. Ask me anything about Arduino.")
+    print("🤖 Hi! I'm Arduino Buddy. Ask me anything about Arduino or the lab.")
     print("   Type 'new' to start a fresh conversation, or 'quit' to leave.\n")
     history = []
+    page = None
     while True:
         try:
             question = input("You: ").strip()
@@ -178,14 +180,21 @@ def chat():
             print("👋 Bye! Happy building.")
             return
         if question.lower() == "new":
-            history = []
+            history, page = [], None
             print("🧹 Okay, fresh start!\n")
             continue
+
+        # Look for a matching lab page. If none matches, keep the last one
+        # (so follow-up questions still have the right page).
+        found = find_page(question)
+        if found and found != page:
+            page = found
+            print(f"   📚 Using the lab page: {page['name']} (README + code)")
 
         history.append({"role": "user", "content": question})
         history = history[-MAX_MEMORY:]   # forget the oldest messages
         print("Buddy: ", end="", flush=True)
-        reply = chat_ai(history)
+        reply = chat_ai(history, page)
         history.append({"role": "assistant", "content": reply})
         print()
 
@@ -203,4 +212,8 @@ if __name__ == "__main__":
     elif len(sys.argv) >= 2 and sys.argv[1] == "chat":
         chat()
     else:
-        print(ask_ai(" ".join(sys.argv[1:]) + "\n\n" + QUESTION_STYLE))
+        question = " ".join(sys.argv[1:])
+        page = find_page(question)
+        if page:
+            print(f"📚 Using the lab page: {page['name']}/README.md\n")
+        print(ask_ai(question + "\n\n" + QUESTION_STYLE, page))
