@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arduino Buddy</title>
+<style>
+  :root {
+    --bg: radial-gradient(1100px 700px at 5% 0%, #c6f0f2 0%, transparent 60%),
+          radial-gradient(900px 650px at 100% 100%, #e2d6ff 0%, transparent 60%),
+          linear-gradient(135deg, #e9f6fb, #efe9ff);
+    --frame: rgba(255, 255, 255, .42);
+    --panel: rgba(255, 255, 255, .72);
+    --panel-strong: rgba(255, 255, 255, .94);
+    --border: rgba(255, 255, 255, .95);
+    --text: #1b2135; --muted: #646d86;
+    --accent: #0e9aa7; --accent2: #7b61ff;
+    --code-bg: rgba(238, 242, 248, .95); --line: rgba(27, 33, 53, .09);
+    --add-bg: rgba(30, 160, 90, .13); --add: #17733f;
+    --del-bg: rgba(220, 60, 60, .12); --del: #b3261e;
+    --pill1: #d4f2f4; --pill2: #e9e2ff; --pill3: #fde3ef;
+    --shadow: 0 12px 34px rgba(70, 60, 140, .13);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: radial-gradient(1100px 700px at 5% 0%, #123a44 0%, transparent 60%),
+            radial-gradient(900px 650px at 100% 100%, #2c1d55 0%, transparent 60%),
+            linear-gradient(135deg, #0d1220, #171631);
+      --frame: rgba(20, 24, 42, .5);
+      --panel: rgba(32, 37, 60, .7);
+      --panel-strong: rgba(40, 45, 72, .95);
+      --border: rgba(255, 255, 255, .08);
+      --text: #e9ecf5; --muted: #9aa3bd;
+      --accent: #2cc4cf; --accent2: #9a86ff;
+      --code-bg: rgba(10, 14, 24, .75); --line: rgba(255, 255, 255, .08);
+      --add-bg: rgba(60, 200, 120, .15); --add: #6fdc9b;
+      --del-bg: rgba(240, 90, 90, .15); --del: #ff8a80;
+      --pill1: rgba(44, 196, 207, .18); --pill2: rgba(154, 134, 255, .2); --pill3: rgba(255, 120, 180, .16);
+      --shadow: 0 12px 34px rgba(0, 0, 0, .35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text);
+    background: var(--bg); background-attachment: fixed; line-height: 1.55; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .panel { background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+
+  /* ---------- The big app frame ---------- */
+  .app { height: calc(100% - 32px); margin: 16px; border-radius: 30px; padding: 14px;
+    display: grid; grid-template-columns: 270px 1fr; gap: 14px;
+    background: var(--frame); border: 1px solid var(--border); box-shadow: var(--shadow);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+  /* ---------- Sidebar ---------- */
+  aside { border-radius: 22px; padding: 16px 12px; display: flex; flex-direction: column; overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px;
+    background: linear-gradient(135deg, #1b2135, #343b63); color: #fff; margin-bottom: 12px; }
+  .brand .logo { font-size: 22px; }
+  .brand strong { display: block; font-size: 16px; }
+  .brand small { opacity: .75; font-size: 12px; }
+  .new-chat { width: 100%; border: 1px solid var(--border); border-radius: 14px; padding: 10px;
+    font-weight: 600; background: var(--panel-strong); transition: transform .15s; }
+  .new-chat:hover { transform: translateY(-1px); }
+  .nav-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+    margin: 16px 10px 6px; }
+  .nav-item { width: 100%; text-align: left; border: none; background: transparent; padding: 9px 12px;
+    border-radius: 12px; font-size: 14.5px; display: flex; gap: 10px; align-items: center;
+    transition: background .15s, transform .15s; }
+  .nav-item:hover { background: var(--panel-strong); transform: translateX(2px); }
+  .nav-item.active { background: var(--panel-strong); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
+  .nav-item .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side-links { margin-top: auto; padding-top: 16px; display: grid; gap: 8px; }
+  .side-links a { display: block; text-align: center; padding: 10px; border-radius: 14px; font-size: 14px;
+    font-weight: 600; text-decoration: none; color: var(--text); transition: transform .15s; }
+  .side-links a:hover { transform: translateY(-2px); }
+  .side-links a:nth-child(1) { background: var(--pill1); }
+  .side-links a:nth-child(2) { background: var(--pill2); }
+  .side-links a:nth-child(3) { background: var(--pill3); }
+
+  /* ---------- Top bar ---------- */
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 2px 4px 10px; }
+  .icon-btn { display: none; border: 1px solid var(--border); background: var(--panel); border-radius: 12px; padding: 8px 12px; }
+  .search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border-radius: 999px; }
+  .search input { flex: 1; border: none; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 14px; }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px;
+    padding: 7px 14px; border-radius: 999px; }
+  .status i { width: 9px; height: 9px; border-radius: 50%; background: #2ecc71; box-shadow: 0 0 0 4px rgba(46, 204, 113, .2); }
+  .status.busy i { background: var(--accent2); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(123, 97, 255, .15); } }
+
+  /* ---------- Feed ---------- */
+  #feed { flex: 1; overflow-y: auto; padding: 4px max(10px, calc((100% - 800px) / 2)) 20px; scroll-behavior: smooth; }
+  #hero { text-align: center; padding-top: 5vh; animation: fadeUp .5s ease; }
+  .orb { width: 104px; height: 104px; border-radius: 50%; margin: 0 auto 20px; display: grid; place-items: center;
+    font-size: 46px; animation: float 4s ease-in-out infinite;
+    background: radial-gradient(circle at 30% 26%, #ffffff 0%, #a5f2f4 22%, #8b7cf2 60%, #4a3ab6 100%);
+    box-shadow: 0 14px 48px rgba(110, 90, 240, .45), inset 0 -8px 20px rgba(40, 20, 120, .35); }
+  @keyframes float { 50% { transform: translateY(-9px) rotate(-3deg); } }
+  #hero h1 { margin: 0 0 6px; font-size: clamp(24px, 3.6vw, 32px); line-height: 1.2; }
+  .grad { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text;
+    background-clip: text; color: transparent; }
+  #hero > p { margin: 0 auto; color: var(--muted); max-width: 520px; }
+  .section { text-align: left; font-size: 14px; margin: 34px 4px 10px; color: var(--muted); font-weight: 600; }
+  .lab-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .lab-card { border: 1px solid var(--border); background: var(--panel); border-radius: 18px; padding: 14px 10px;
+    text-align: center; transition: transform .18s, box-shadow .18s; backdrop-filter: blur(14px); }
+  .lab-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+  .lab-card .lab-icon { display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 8px;
+    border-radius: 14px; font-size: 24px; background: var(--panel-strong); }
+  .lab-card strong { display: block; font-size: 14px; }
+  .lab-card small { display: block; color: var(--muted); font-size: 12px; line-height: 1.3; margin-top: 2px; }
+
+  .msg { margin: 14px 0; border-radius: 20px; padding: 14px 16px; animation: fadeUp .3s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } }
+  .msg.user { width: fit-content; max-width: 80%; margin-left: auto; color: #fff; white-space: pre-wrap;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); border-bottom-right-radius: 6px; }
+  .msg.user .tag { font-weight: 600; margin-bottom: 4px; }
+  .msg.user details summary { cursor: pointer; opacity: .9; }
+  .msg.user pre { background: rgba(0, 0, 0, .2); border: none; color: #fff; max-height: 260px; }
+  .msg.buddy { background: var(--panel-strong); border: 1px solid var(--border); box-shadow: var(--shadow);
+    border-bottom-left-radius: 6px; }
+  .who { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .source { font-size: 13px; color: var(--muted); margin: 10px 4px -6px; animation: fadeUp .3s ease; }
+  .dots i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%;
+    background: var(--accent2); animation: bounce 1.2s infinite; }
+  .dots i:nth-child(2) { animation-delay: .15s; }
+  .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+  .md h4, .msg h4 { margin: 14px 0 6px; font-size: 15px; }
+  .md p { margin: 6px 0; }
+  .md ul { margin: 6px 0; padding-left: 22px; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92em;
+    background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+    overflow-x: auto; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px; margin: 8px 0; }
+  pre code { background: none; padding: 0; }
+  pre.errors { color: var(--del); white-space: pre-wrap; }
+
+  /* Progress steps */
+  .step { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+  .step.todo { color: var(--muted); }
+  .step.now { font-weight: 600; }
+  .time { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .spin { display: inline-block; width: 15px; height: 15px; border-radius: 50%;
+    border: 2px solid var(--accent); border-right-color: transparent; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Hints, diff, buttons */
+  .hint { border-left: 3px solid var(--accent2); padding: 2px 0 2px 12px; margin: 12px 0; white-space: pre-wrap; animation: fadeUp .3s ease; }
+  .diff { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin: 8px 0;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px; }
+  .diff .where { padding: 5px 12px; font-size: 12px; color: var(--muted); background: var(--code-bg);
+    font-family: system-ui, sans-serif; }
+  .diff .del { padding: 5px 12px; background: var(--del-bg); color: var(--del); white-space: pre-wrap; }
+  .diff .add { padding: 5px 12px; background: var(--add-bg); color: var(--add); white-space: pre-wrap; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  .btn { border: none; border-radius: 12px; padding: 9px 14px; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); transition: transform .15s; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .good { font-weight: 600; color: var(--add); }
+  .err { color: var(--del); }
+  .legend { font-size: 13px; color: var(--muted); }
+
+  /* ---------- Dock: tiles + input card ---------- */
+  .dock { padding: 8px max(10px, calc((100% - 800px) / 2)) 2px; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+  .tile { border-radius: 18px; padding: 10px 6px; font-size: 13.5px; font-weight: 600; text-align: center;
+    border: 1px solid var(--border); background: var(--panel); backdrop-filter: blur(14px);
+    transition: transform .15s, background .15s; }
+  .tile:hover { transform: translateY(-3px); }
+  .tile span { display: grid; place-items: center; width: 38px; height: 38px; margin: 0 auto 4px;
+    border-radius: 12px; font-size: 20px; background: var(--panel-strong); }
+  .tile.active { background: var(--panel-strong); outline: 2px solid var(--accent); }
+  .composer { border-radius: 22px; padding: 10px 12px 12px; }
+  .composer-top { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted);
+    padding: 0 4px 6px; border-bottom: 1px solid var(--line); margin-bottom: 6px; flex-wrap: wrap; }
+  .composer-main { display: flex; align-items: flex-end; gap: 10px; }
+  #input { flex: 1; border: none; outline: none; resize: none; background: transparent; color: var(--text);
+    font: inherit; font-size: 15px; max-height: 320px; padding: 8px 4px; }
+  #input.code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px; min-height: 140px; }
+  .send { width: 44px; height: 44px; flex: none; border: none; border-radius: 50%; color: #fff; font-size: 17px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); transition: transform .15s; }
+  .send:hover { transform: scale(1.06); }
+  .send:disabled { opacity: .45; cursor: wait; transform: none; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .chip { border: 1px solid var(--line); background: var(--panel-strong); border-radius: 999px;
+    padding: 5px 12px; font-size: 12.5px; transition: transform .15s; }
+  .chip:hover { transform: translateY(-1px); }
+  .hint-text { font-size: 12px; color: var(--muted); text-align: center; margin: 8px 0 0; }
+
+  /* ---------- Phones and small screens ---------- */
+  @media (max-width: 860px) {
+    .app { margin: 0; height: 100%; border-radius: 0; grid-template-columns: 1fr; padding: 8px; }
+    aside { position: fixed; inset: 8px auto 8px 8px; width: 270px; z-index: 10;
+      transform: translateX(-110%); transition: transform .25s; }
+    aside.open { transform: none; }
+    .icon-btn { display: block; }
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar" class="panel">
+    <div class="brand">
+      <span class="logo">🤖</span>
+      <div><strong>Arduino Buddy</strong><small>Free · Offline · Open</small></div>
+    </div>
+    <button class="new-chat" id="newChat">＋ New chat</button>
+
+    <p class="nav-title">Modes</p>
+    <button class="nav-item" data-mode="chat">💬 <span class="t">Chat</span></button>
+    <button class="nav-item" data-mode="teach">💡 <span class="t">Teach me</span></button>
+    <button class="nav-item" data-mode="fix">🔧 <span class="t">Fix my code</span></button>
+    <button class="nav-item" data-mode="explain">📖 <span class="t">Explain code</span></button>
+
+    <p class="nav-title">The Lab</p>
+    <div id="weeks"></div>
+
+    <div class="side-links">
+      <a href="https://github.com/Mojirade18/arduino-starter-project" target="_blank" rel="noopener">⭐ Star on GitHub</a>
+      <a href="https://github.com/Mojirade18/arduino-starter-project/tree/main/ai-buddy" target="_blank" rel="noopener">📖 How Buddy works</a>
+      <a href="https://github.com/Mojirade18/arduino-starter-project/issues" target="_blank" rel="noopener">🐛 Report a problem</a>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <button id="menuBtn" class="icon-btn" aria-label="Open menu">☰</button>
+      <label class="search panel">🔍 <input id="search" placeholder="Ask about the lab… (press Enter)"></label>
+      <span id="status" class="status panel"><i></i><span id="statusText">Ready</span></span>
+    </div>
+
+    <section id="feed"></section>
+
+    <div class="dock">
+      <div class="tiles">
+        <button class="tile" data-mode="chat"><span>💬</span>Chat</button>
+        <button class="tile" data-mode="teach"><span>💡</span>Teach me</button>
+        <button class="tile" data-mode="fix"><span>🔧</span>Fix code</button>
+        <button class="tile" data-mode="explain"><span>📖</span>Explain</button>
+      </div>
+      <div class="composer panel">
+        <div class="composer-top">
+          <span>🔒 Runs on this computer. Your code never leaves it.</span>
+          <span>⚡ Powered by Qwen2.5-Coder 1.5B</span>
+        </div>
+        <div class="composer-main">
+          <textarea id="input" rows="1"></textarea>
+          <button id="sendBtn" class="send" aria-label="Send">➤</button>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
+      <p class="hint-text" id="hintText"></p>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const feed = $("feed"), input = $("input");
+
+const MODES = {
+  chat:    { label: "💬 Chat",         placeholder: "Ask anything about Arduino or the lab…" },
+  teach:   { label: "💡 Teach me",     placeholder: "Paste your sketch here. Buddy will give you hints first…" },
+  fix:     { label: "🔧 Fix my code",  placeholder: "Paste your sketch here. Buddy will fix it and prove the fix compiles…" },
+  explain: { label: "📖 Explain code", placeholder: "Paste your sketch here. Buddy will explain it step by step…" },
+};
+const SUGGESTIONS = ["What does analogRead do?", "Which pin is the water leak sensor on?", "Why does an LED need a resistor?"];
+const STEPS = {
+  check:   [["compile", "Compiling your sketch"], ["fix", "AI is writing a fix"],
+            ["verify", "Checking the fix with the compiler"], ["explain", "Preparing hints and explanation"]],
+  explain: [["read", "Reading your sketch"]],
+};
+const WEEK_ICONS = ["💡", "🔢", "💧", "👏", "📏"];
+const DOTS = '<span class="dots"><i></i><i></i><i></i></span>';
+
+let mode = "chat", busy = false, history = [], chatPage = null, examples = [], weeks = [];
+
+// ---------- Safe formatting for AI answers ----------
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function inlineMd(text) {
+  let html = esc(text)
+    .replace(/^#{1,4} (.*)$/gm, "<h4>$1</h4>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/^\s*(?:[-*]|\d+\.) (.*)$/gm, "<li>$1</li>");
+  html = html.replace(/(?:<li>.*<\/li>\n?)+/g, m => "<ul>" + m.replace(/\n/g, "") + "</ul>");
+  return html.split(/\n{2,}/).map(p => p.trim()).filter(Boolean)
+    .map(p => /^<(h4|ul)/.test(p) ? p : "<p>" + p.replace(/\n/g, "<br>") + "</p>").join("");
+}
+function md(text) {
+  return '<div class="md">' + String(text).split(/```[a-zA-Z+]*\n?/)
+    .map((part, i) => i % 2 ? `<pre><code>${esc(part.trim())}</code></pre>` : inlineMd(part)).join("") + "</div>";
+}
+
+// ---------- Small helpers ----------
+function addEl(parent, tag, cls, html) {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (html !== undefined) el.innerHTML = html;
+  parent.appendChild(el);
+  return el;
+}
+function scrollDown() { feed.scrollTop = feed.scrollHeight; }
+function hideHero() { const h = $("hero"); if (h) h.remove(); }
+function cleanTitle(t) { return String(t).replace(/^[^\p{L}\p{N}]+/u, "").trim(); }
+function setBusy(on) {
+  busy = on;
+  $("sendBtn").disabled = on;
+  $("statusText").textContent = on ? "Buddy is thinking…" : "Ready";
+  $("status").classList.toggle("busy", on);
+}
+function autoGrow() {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, mode === "chat" ? 180 : 320) + "px";
+}
+async function post(url, body) {
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!data.job) throw new Error(data.error || "Buddy couldn't start");
+  return data;
+}
+async function getJob(id) { return (await fetch(`/api/job/${id}`)).json(); }
+function buddyCard() {
+  const card = addEl(feed, "div", "msg buddy");
+  addEl(card, "div", "who", "🤖 Buddy");
+  return card;
+}
+
+// ---------- Welcome screen ----------
+function renderHero() {
+  feed.innerHTML = `<div id="hero">
+    <div class="orb">🤖</div>
+    <h1>Welcome to <span class="grad">Arduino Buddy</span></h1>
+    <p>Your free, offline Arduino teacher. Hints before answers, and only fixes that actually compile.</p>
+    <h3 class="section">📚 Lab projects. Click one to start learning</h3>
+    <div class="lab-cards" id="labCards"></div>
+  </div>`;
+  weeks.forEach((w, i) => {
+    const card = addEl($("labCards"), "button", "lab-card");
+    addEl(card, "span", "lab-icon").textContent = WEEK_ICONS[i] || "🔧";
+    addEl(card, "strong").textContent = w.name.replace("week", "Week ");
+    addEl(card, "small").textContent = cleanTitle(w.title);
+    card.onclick = () => askAboutWeek(w);
+  });
+}
+function askAboutWeek(w) {
+  setMode("chat");
+  input.value = `Tell me about ${w.name}: ${cleanTitle(w.title)}. What will I build, and what will I learn?`;
+  send();
+}
+
+// ---------- Modes ----------
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
+  input.placeholder = MODES[m].placeholder;
+  input.classList.toggle("code", m !== "chat");
+  $("hintText").textContent = m === "chat"
+    ? "Enter to send · Shift+Enter for a new line"
+    : "Paste a whole sketch · Ctrl+Enter or ➤ to run";
+  renderChips();
+  autoGrow();
+  $("sidebar").classList.remove("open");
+  input.focus();
+}
+function renderChips() {
+  const chips = $("chips");
+  chips.innerHTML = "";
+  const items = mode === "chat"
+    ? SUGGESTIONS.map(s => ["💭 " + s, () => { input.value = s; send(); }])
+    : examples.map(n => ["📄 Try " + n, () => loadExample(n)]);
+  items.forEach(([text, action]) => { const b = addEl(chips, "button", "chip"); b.textContent = text; b.onclick = action; });
+}
+async function loadExample(name) {
+  const r = await (await fetch(`/api/examples/${name}`)).json();
+  input.value = r.code;
+  autoGrow();
+  input.focus();
+}
+
+// ---------- Sending ----------
+function userBubble(text, isCode) {
+  hideHero();
+  const b = addEl(feed, "div", "msg user");
+  if (isCode) {
+    b.innerHTML = `<div class="tag">${MODES[mode].label}</div>
+      <details><summary>Your sketch (${text.split("\n").length} lines)</summary><pre><code>${esc(text)}</code></pre></details>`;
+  } else {
+    b.textContent = text;
+  }
+  scrollDown();
+}
+async function send() {
+  const text = input.value.trim();
+  if (!text || busy) return;
+  input.value = "";
+  autoGrow();
+  if (mode === "chat") await chat(text);
+  else await runSketch(text);
+}
+
+// ---------- Chat ----------
+async function chat(text) {
+  userBubble(text, false);
+  history.push({ role: "user", content: text });
+  history = history.slice(-10);
+  const card = buddyCard();
+  const body = addEl(card, "div", "", DOTS);
+  scrollDown();
+  setBusy(true);
+  try {
+    const started = await post("/api/chat", { history, page: chatPage });
+    let data;
+    do {
+      await wait(700);
+      data = await getJob(started.job);
+      if (data.page && data.page !== chatPage) {
+        chatPage = data.page;
+        const note = document.createElement("div");
+        note.className = "source";
+        note.textContent = `📚 Using the lab page: ${chatPage} (README + code)`;
+        feed.insertBefore(note, card);
+      }
+      if (data.partial) { body.innerHTML = md(data.partial); scrollDown(); }
+    } while (!data.done);
+    if (data.error) throw new Error(data.error);
+    history.push({ role: "assistant", content: data.partial });
+  } catch (err) {
+    body.innerHTML = `<p class="err">⚠️ ${esc(err.message)}. Is Ollama running? Is web.py still running?</p>`;
+    history.pop();
+  } finally {
+    setBusy(false);
+  }
+}
+
+// ---------- Sketch tools ----------
+function renderSteps(el, task, data, start) {
+  const list = STEPS[task];
+  const idx = Math.max(0, list.findIndex(s => s[0] === (data ? data.stage : "")));
+  const attempt = data && data.attempt;
+  el.innerHTML = list.map(([key, label], i) => {
+    const state = i < idx ? "done" : i === idx ? "now" : "todo";
+    const icon = state === "done" ? "✅" : state === "now" ? '<span class="spin"></span>' : "⬜";
+    const extra = (key === "fix" || key === "verify") && attempt && i === idx ? ` (attempt ${attempt} of 3)` : "";
+    return `<div class="step ${state}">${icon}<span>${label}${extra}</span></div>`;
+  }).join("") + `<div class="time">⏱ ${Math.round((Date.now() - start) / 1000)}s · usually 1–3 minutes</div>`;
+  scrollDown();
+}
+
+async function runSketch(code) {
+  const task = mode === "explain" ? "explain" : "check";
+  const teach = mode === "teach";
+  userBubble(code, true);
+  const card = buddyCard();
+  const steps = addEl(card, "div", "steps");
+  const start = Date.now();
+  setBusy(true);
+  try {
+    const started = await post(`/api/${task}`, { text: code });
+    let data = null;
+    do {
+      renderSteps(steps, task, data, start);
+      await wait(1500);
+      data = await getJob(started.job);
+    } while (!data.done);
+    if (data.error) throw new Error(data.error);
+    steps.remove();
+    addEl(card, "p", "time", `✨ Done in ${Math.round((Date.now() - start) / 1000)}s`);
+    if (task === "explain") addEl(card, "div", "", md(data.result.answer));
+    else showCheck(card, data.result, teach);
+  } catch (err) {
+    steps.remove();
+    addEl(card, "p", "err", `⚠️ ${esc(err.message)}. Is Ollama running? Is web.py still running?`);
+  } finally {
+    setBusy(false);
+    scrollDown();
+  }
+}
+
+function diffHtml(changes) {
+  if (!changes || !changes.length) return "<p>Only comments or spacing changed.</p>";
+  return '<div class="diff">' + changes.map(c => {
+    const where = c.kind === "insert" ? (c.line ? `after line ${c.line}` : "at the start") : `line ${c.line}`;
+    let rows = `<div class="where">${where}</div>`;
+    if (c.before) rows += `<div class="del">− ${esc(c.before)}</div>`;
+    if (c.after) rows += `<div class="add">+ ${esc(c.after)}</div>`;
+    return rows;
+  }).join("") + "</div>";
+}
+
+function showCheck(card, r, teach) {
+  if (r.ok) { addEl(card, "p", "good", "✅ Your sketch compiles with no errors! Nice work."); return; }
+  addEl(card, "h4", "", "❌ The compiler found errors");
+  addEl(card, "pre", "errors").textContent = r.errors;
+  if (!r.fixed) {
+    addEl(card, "p", "", "⚠️ Buddy couldn't find a fix that compiles, so it won't guess. Look at the errors above, or ask a friend or mentor.");
+    return;
+  }
+  if (!teach) { showAnswer(card, r); return; }
+
+  // Teach me: reveal one hint at a time
+  const hints = [
+    ["💡 Hint 1", esc(r.where)],
+    ["💡 Hint 2", md(r.hints)],
+    ["💡 Hint 3: exactly what needs to change", diffHtml(r.changes_data)],
+  ];
+  let step = 0;
+  const controls = document.createElement("div");
+  controls.className = "row";
+  const next = addEl(controls, "button", "btn");
+  const answer = addEl(controls, "button", "btn ghost", "Show the answer");
+
+  function showHint() {
+    controls.remove();
+    const box = addEl(card, "div", "hint");
+    addEl(box, "h4", "", hints[step][0]);
+    addEl(box, "div", "", hints[step][1]);
+    step++;
+    next.textContent = step < hints.length ? "Next hint →" : "Show the full fix";
+    answer.hidden = step >= hints.length;
+    card.appendChild(controls);
+    scrollDown();
+  }
+  next.onclick = () => step < hints.length ? showHint() : (controls.remove(), showAnswer(card, r));
+  answer.onclick = () => { controls.remove(); showAnswer(card, r); };
+  showHint();
+}
+
+function showAnswer(card, r) {
+  addEl(card, "h4", "", "✅ Verified fix: Buddy compiled it, and it works");
+  addEl(card, "pre", "").textContent = r.fixed;
+  const row = addEl(card, "div", "row");
+  const use = addEl(row, "button", "btn", "✅ Use this fix");
+  use.onclick = () => { input.value = r.fixed; autoGrow(); input.focus(); use.textContent = "✔ Put in the editor"; };
+  const copy = addEl(row, "button", "btn ghost", "📋 Copy");
+  copy.onclick = async () => {
+    try { await navigator.clipboard.writeText(r.fixed); copy.textContent = "✔ Copied!"; }
+    catch { copy.textContent = "Select the code and copy it"; }
+  };
+  addEl(card, "h4", "", "📝 What Buddy changed (found by comparing the files, not by the AI)");
+  addEl(card, "div", "", diffHtml(r.changes_data));
+  if (r.explanation) {
+    addEl(card, "h4", "", "💬 Why these changes fix it");
+    addEl(card, "div", "", md(r.explanation));
+    addEl(card, "p", "legend", "✔ = from Buddy's rules (always matches the fix) · 🤖 = from the AI (may be less accurate)");
+  }
+  scrollDown();
+}
+
+// ---------- Wiring it all up ----------
+document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+$("sendBtn").onclick = send;
+input.addEventListener("input", autoGrow);
+input.addEventListener("keydown", e => {
+  if (mode === "chat" && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+  if (mode !== "chat" && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); }
+});
+$("search").addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.value.trim()) {
+    setMode("chat");
+    input.value = e.target.value.trim();
+    e.target.value = "";
+    send();
+  }
+});
+$("newChat").onclick = () => { history = []; chatPage = null; renderHero(); setMode("chat"); };
+$("menuBtn").onclick = () => $("sidebar").classList.toggle("open");
+
+fetch("/api/weeks").then(r => r.json()).then(list => {
+  weeks = list;
+  weeks.forEach((w, i) => {
+    const b = addEl($("weeks"), "button", "nav-item");
+    b.textContent = (WEEK_ICONS[i] || "🔧") + " ";
+    addEl(b, "span", "t").textContent = cleanTitle(w.title);
+    b.onclick = () => askAboutWeek(w);
+  });
+  if ($("hero")) renderHero();
+});
+fetch("/api/examples").then(r => r.json()).then(names => { examples = names; renderChips(); });
+
+renderHero();
+setMode("chat");
+</script>
+</body>
+</html>

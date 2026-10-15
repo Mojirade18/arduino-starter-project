@@ -1,8 +1,9 @@
 """Arduino Buddy: a free, offline AI teacher for Arduino beginners."""
 import sys
+import json
 from pathlib import Path
 
-from ai import ask_ai, chat_ai
+from ai import ask_ai, chat_ai, wake_ollama
 from compiler import compile_code, only_error_lines
 from changes import extract_code, get_changes, describe
 from rules import rule_for
@@ -10,6 +11,7 @@ from lab import find_page
 
 MAX_TRIES = 3     # how many times Buddy tries to find a fix that compiles
 MAX_MEMORY = 10   # how many recent messages Buddy remembers in chat mode
+HISTORY_FILE = Path(__file__).parent / "chat_history.json"
 
 # Extra rules used only for normal questions
 QUESTION_STYLE = """Answer rules:
@@ -36,11 +38,14 @@ def build_text(changes, part, ai_question):
     return "\n".join(lines)
 
 
-def find_fix(code, errors):
-    """Ask the AI for a fix and check it with the compiler. Returns the fixed code, or None."""
+def find_fix(code, errors, report=None):
+    """Ask the AI for a fix and check it with the compiler. Returns the fixed code, or None.
+    'report' is optional: the web page uses it to show which step Buddy is on."""
     feedback = ""
     for attempt in range(1, MAX_TRIES + 1):
         print(f"   ...attempt {attempt} of {MAX_TRIES}")
+        if report:
+            report("fix", attempt)
         reply = ask_ai(
             "This Arduino sketch does not compile.\n\n"
             "SKETCH:\n```cpp\n" + code + "\n```\n\n"
@@ -54,6 +59,8 @@ def find_fix(code, errors):
         if fixed is None:
             feedback = "Your last answer had no code block. Reply with the full fixed sketch in a ```cpp block.\n\n"
             continue
+        if report:
+            report("verify", attempt)
         ok, new_errors = compile_code(fixed)
         if ok:
             return fixed
@@ -164,10 +171,15 @@ def hint(path):
 
 
 def chat():
-    print("🤖 Hi! I'm Arduino Buddy. Ask me anything about Arduino or the lab.")
-    print("   Type 'new' to start a fresh conversation, or 'quit' to leave.\n")
-    history = []
+    # Load the last conversation, if there is one
+    history = json.loads(HISTORY_FILE.read_text()) if HISTORY_FILE.exists() else []
     page = None
+
+    print("🤖 Hi! I'm Arduino Buddy. Ask me anything about Arduino or the lab.")
+    if history:
+        print(f"   🧠 I remember our last {len(history)} messages. Type 'new' to forget them.")
+    print("   Type 'new' to start a fresh conversation, or 'quit' to leave.\n")
+
     while True:
         try:
             question = input("You: ").strip()
@@ -181,11 +193,10 @@ def chat():
             return
         if question.lower() == "new":
             history, page = [], None
+            HISTORY_FILE.unlink(missing_ok=True)   # delete the saved conversation
             print("🧹 Okay, fresh start!\n")
             continue
 
-        # Look for a matching lab page. If none matches, keep the last one
-        # (so follow-up questions still have the right page).
         found = find_page(question)
         if found and found != page:
             page = found
@@ -196,12 +207,23 @@ def chat():
         print("Buddy: ", end="", flush=True)
         reply = chat_ai(history, page)
         history.append({"role": "assistant", "content": reply})
+        HISTORY_FILE.write_text(json.dumps(history, indent=2))   # save after every answer
         print()
 
 
 # ----- Choose what to do based on the first word typed -----
 if __name__ == "__main__":
-    if len(sys.argv) >= 3 and sys.argv[1] == "explain":
+    if len(sys.argv) < 2:
+        print("🤖 Arduino Buddy: here's what I can do:\n")
+        print('  python buddy.py "your question"        ask one question')
+        print("  python buddy.py chat                   have a conversation")
+        print("  python buddy.py explain FILE.ino       explain a sketch")
+        print("  python buddy.py debug FILE.ino         fix errors (verified fix)")
+        print("  python buddy.py hint FILE.ino          get hints before the answer")
+        print("  python web.py                          open Buddy in your browser")
+    elif not wake_ollama():
+        pass   # wake_ollama already explained the problem
+    elif len(sys.argv) >= 3 and sys.argv[1] == "explain":
         sketch = Path(sys.argv[2]).read_text()
         print(ask_ai("Explain this Arduino sketch step by step for a beginner. "
                      "Say which pins it uses and what each part does.\n\n" + sketch))
@@ -209,11 +231,11 @@ if __name__ == "__main__":
         debug(sys.argv[2])
     elif len(sys.argv) >= 3 and sys.argv[1] == "hint":
         hint(sys.argv[2])
-    elif len(sys.argv) >= 2 and sys.argv[1] == "chat":
+    elif sys.argv[1] == "chat":
         chat()
     else:
         question = " ".join(sys.argv[1:])
         page = find_page(question)
         if page:
-            print(f"📚 Using the lab page: {page['name']}/README.md\n")
+            print(f"📚 Using the lab page: {page['name']} (README + code)\n")
         print(ask_ai(question + "\n\n" + QUESTION_STYLE, page))
