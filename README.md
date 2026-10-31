@@ -2,7 +2,7 @@
 
 > **Learn → Build → Experiment → Contribute**
 
-A beginner-friendly open-source repository for learning **Arduino, electronics, embedded systems, and GitHub** through hands-on projects.
+A beginner-friendly open-source repository for learning **Arduino, electronic, embedded systems, and GitHub** through hands-on projects.
 
 ```text
                     ARDUINO STARTER LAB
