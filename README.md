@@ -1,4 +1,4 @@
-# 🔧 Arduino Starter Lab
+# 🔧 Arduino Starter Labs
 
 > **Learn → Build → Experiment → Contribute**
 
