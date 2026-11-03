@@ -1,6 +1,6 @@
 # 💡 Week 1 — Light-Activated LED
 
-Build a simple automatic light using an **LDR sensor** and an Arduino.
+Build a simple automatic light using an **LDR sensors** and an Arduino.
 
 When the environment becomes dark, the LED turns **ON**. When there is enough light, the LED turns **OFF**.
 
